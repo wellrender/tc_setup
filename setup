@@ -1,6 +1,7 @@
-#!/bin/bash -x
+#!/bin/bash
 SELF=$(basename $0)
 UPDATE_BASE=http://192.32.1.111:8000
+
 run_self_update() {
   echo "Performing self-update..."
 
@@ -33,7 +34,7 @@ fi
 EOF
 
   echo "Inserting update process..."
-  exec /bin/bash -x updateScript.sh
+  exec /bin/bash updateScript.sh
 }
 
 if [[ $EUID -ne 0 ]]; then
@@ -45,11 +46,11 @@ ask() {
 echo -n $1
 echo -n " [y/n]"
 while read -r -n 1 -s answer; do
-    if [[ $answer = [YyNn] ]]; then
-        [[ $answer = [Yy] ]] && retval=0
-        [[ $answer = [Nn] ]] && retval=1
-        break
-    fi
+  if [[ $answer = [YyNn] ]]; then
+      [[ $answer = [Yy] ]] && retval=0
+      [[ $answer = [Nn] ]] && retval=1
+      break
+  fi
 done
 echo
 return $retval
@@ -107,19 +108,19 @@ cd /home/user
 curl -O http://sarmiac.medportal.saratov.gov.ru/media/uploads/admin/2016/01/19/guzmiac-ca.cer
 /opt/cprocsp/bin/ia32/certmgr -inst -file guzmiac-ca.cer -store uRoot
 if [[ ! -e $hdimage_dir ]]; then
-	mkdir $hdimage_dir 
+    mkdir $hdimage_dir 
 fi
 cd $hdimage_dir 
 echo -n "Enter container directory names: "
 read container_dir_names
 for container_dir in $container_dir_names; do
-	smbclient //server/000 -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
+    smbclient //server/000 -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
 done
 /bin/chown -R user:user $hdimage_dir  
 su - user <<'EOF'
 set -x
 for container_name in $(/opt/cprocsp/bin/ia32/csptest -keyset -enum_cont -fqcn -verifyc | egrep -o '\\\\.\\HDIMAGE\\RaUser(-[0-9,a-f]*)*'); do 
-	/opt/cprocsp/bin/ia32/certmgr -inst -ask-cont -at_signature -cont $container_name
+    /opt/cprocsp/bin/ia32/certmgr -inst -ask-cont -at_signature -cont $container_name
 done
 EOF
 }
@@ -149,10 +150,10 @@ Section "Screen"
 EndSection
 EOF
 if [[ ! -e $vncpasswd_file_dir -a ! -d $vncpasswd_file_dir ]]; then
-	mkdir $vncpasswd_file_dir	
-	cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name	
+    mkdir $vncpasswd_file_dir   
+    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
 else
-	cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name	
+    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
 fi
 }
 
@@ -168,15 +169,15 @@ if [[ -z $1 ]]; then
             change_klagent_hostid
             #show_menu
             ;;
-	    3)
+            3)
             install_cryptopro
-	    ;;
+            ;;
             4)
             install_cryptopro_license
-	    ;;
+            ;;
             5)
             install_keys
-	    ;;
+            ;;
             6)
             configure_firefox
             ;;
