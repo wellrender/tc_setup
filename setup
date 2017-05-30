@@ -150,52 +150,44 @@ Section "Screen"
 EndSection
 EOF
 if [[ ! -e $vncpasswd_file_dir -a ! -d $vncpasswd_file_dir ]]; then
-    mkdir $vncpasswd_file_dir   
-    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
+  mkdir $vncpasswd_file_dir   
+  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
 else
-    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
+  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
 fi
 }
 
 if [[ -z $1 ]]; then
-    show_menu
-    while read -n 1 answ; do
-        case $answ in
-            1)
-            rename_host
-            #show_menu
-            ;;
-            2)
-            change_klagent_hostid
-            #show_menu
-            ;;
-            3)
-            install_cryptopro
-            ;;
-            4)
-            install_cryptopro_license
-            ;;
-            5)
-            install_keys
-            ;;
-            6)
-            configure_firefox
-            ;;
-            0)
-            exit 0 ;;
-            *)
-            echo "Wrong number"
-            #show_menu
-            ;;
-        esac
-    done
-else
-    case $1 in
-        "full")
-        rename_host
-        change_klagent_hostid
-        ;;
-        *)
-        echo "usage"
+  show_menu
+  while read -n 1 answ; do
+    case $answ in
+      1)
+      rename_host;;
+      2)
+      change_klagent_hostid;;
+      3)
+      install_cryptopro;;
+      4)
+      install_cryptopro_license;;
+      5)
+      install_keys;;
+      6)
+      configure_firefox;;
+      7)
+      enable_vnc;;
+      0)
+      exit 0;;
+      *)
+      echo "Wrong number";;
     esac
+  done
+else
+  case $1 in
+    full)
+    rename_host
+    change_klagent_hostid
+    ;;
+    *)
+    echo "usage"
+  esac
 fi
