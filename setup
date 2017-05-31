@@ -38,123 +38,122 @@ EOF
 }
 
 if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root" 1>&2
-    exit 1
+  echo "This script must be run as root" 1>&2
+  exit 1
 fi
 
 ask() { 
-echo -n $1
-echo -n " [y/n]"
-while read -r -n 1 -s answer; do
-  if [[ $answer = [YyNn] ]]; then
+  echo -n $1
+  echo -n " [y/n]"
+  while read -r -n 1 -s answer; do
+    if [[ $answer = [YyNn] ]]; then
       [[ $answer = [Yy] ]] && retval=0
       [[ $answer = [Nn] ]] && retval=1
       break
-  fi
-done
-echo
-return $retval
+    fi
+  done
+  echo
+  return $retval
 }
 
 show_menu() {
-clear
-echo "M E N U"
-echo
-echo
-echo "1) Rename host"
-echo "2) Regenerate HOSTID for klnagent"
-echo "3) Install CryptoPRO"
-echo "4) Install/reinstall licence for CryptoPRO"
-echo "5) Install keys"
-echo "0) Exit"
-echo
-echo -n ">>> "
+  clear
+  echo "M E N U"
+  echo
+  echo
+  echo "1) Rename host"
+  echo "2) Regenerate HOSTID for klnagent"
+  echo "3) Install CryptoPRO"
+  echo "4) Install/reinstall licence for CryptoPRO"
+  echo "5) Install keys"
+  echo "0) Exit"
+  echo
+  echo -n ">>> "
 }
 
 rename_host(){
-hostnamefile=/etc/sysconfig/network
-if ask "RENAME HOST?"; then
+  hostnamefile=/etc/sysconfig/network
+  if ask "RENAME HOST?"; then
     if [ -f $hostnamefile ] ; then
-        echo -n "Input new hostname: "
-        read newhostname
-        sed -e "s/^HOSTNAME=.*/HOSTNAME=$newhostname/" -i $hostnamefile
+      echo -n "Input new hostname: "
+      read newhostname
+      sed -e "s/^HOSTNAME=.*/HOSTNAME=$newhostname/" -i $hostnamefile
     else
-        echo "Hostname file $hostnamefile not exist"
+      echo "Hostname file $hostnamefile not exist"
     fi
-fi
+  fi
 }
 
 change_klagent_hostid(){
-if ask "REGENERATE HOSTID FOR KLNAGENT?"; then
+  if ask "REGENERATE HOSTID FOR KLNAGENT?"; then
     /opt/kaspersky/klnagent/bin/klmover -dupfix
-fi
+  fi
 }
 
 install_cryptopro(){
-apt-get update && apt-get -y install cryptopro-preinstall
-cd /tmp
-smbclient //server/000 -N -c 'prompt;recurse;cd Иванов\Distrib\sign_cont;mget "packets"'
-cd packets
-apt-get install *.rpm
+  apt-get update && apt-get -y install cryptopro-preinstall
+  cd /tmp
+  smbclient //server/000 -N -c 'prompt;recurse;cd Иванов\Distrib\sign_cont;mget "packets"'
+  cd packets
+  apt-get install *.rpm
 }
 
 install_cryptopro_license(){
-echo -n "Enter CryptoPro licence key in UPPER CASE with dashes (-) XXXX-XXXX-XXXX-XXXX: "
+  echo -n "Enter CryptoPro licence key in UPPER CASE with dashes (-) XXXX-XXXX-XXXX-XXXX: "
 }
 
 install_keys(){
-hdimage_dir=/var/opt/cprocsp/keys/user
-cd /home/user
-curl -O http://sarmiac.medportal.saratov.gov.ru/media/uploads/admin/2016/01/19/guzmiac-ca.cer
-/opt/cprocsp/bin/ia32/certmgr -inst -file guzmiac-ca.cer -store uRoot
-if [[ ! -e $hdimage_dir ]]; then
+  hdimage_dir=/var/opt/cprocsp/keys/user
+  cd /home/user
+  curl -O http://sarmiac.medportal.saratov.gov.ru/media/uploads/admin/2016/01/19/guzmiac-ca.cer
+  /opt/cprocsp/bin/ia32/certmgr -inst -file guzmiac-ca.cer -store uRoot
+  if [[ ! -e $hdimage_dir ]]; then
     mkdir $hdimage_dir 
-fi
-cd $hdimage_dir 
-echo -n "Enter container directory names: "
-read container_dir_names
-for container_dir in $container_dir_names; do
-    smbclient //server/000 -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
-done
-/bin/chown -R user:user $hdimage_dir  
-su - user <<'EOF'
-set -x
-for container_name in $(/opt/cprocsp/bin/ia32/csptest -keyset -enum_cont -fqcn -verifyc | egrep -o '\\\\.\\HDIMAGE\\RaUser(-[0-9,a-f]*)*'); do 
+  fi
+  cd $hdimage_dir 
+  echo -n "Enter container directory names: "
+  read container_dir_names
+  for container_dir in $container_dir_names; do
+      smbclient //server/000 -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
+  done
+  /bin/chown -R user:user $hdimage_dir  
+  su - user <<'EOF'
+  for container_name in $(/opt/cprocsp/bin/ia32/csptest -keyset -enum_cont -fqcn -verifyc | egrep -o '\\\\.\\HDIMAGE\\RaUser(-[0-9,a-f]*)*'); do 
     /opt/cprocsp/bin/ia32/certmgr -inst -ask-cont -at_signature -cont $container_name
 done
 EOF
 }
 
 configure_firefox(){
-set_option(){
-sed -i 's/user_pref("'$1'",.*);/user_pref("'$1'",'$2');/' user.js
-grep -q $1 user.js || echo "user_pref(\"$1\",$2);" >> user.js
-}
-cd /home/user/.mozilla/firefox/*.default
-set_option browser.search.defaulturl '"https://duckduckgo.com/"'
+  set_option(){
+    sed -i 's/user_pref("'$1'",.*);/user_pref("'$1'",'$2');/' user.js
+    grep -q $1 user.js || echo "user_pref(\"$1\",$2);" >> user.js
+  }
+  cd /home/user/.mozilla/firefox/*.default
+  set_option browser.search.defaulturl '"https://duckduckgo.com/"'
 }
 
 enable_vnc(){
-vncpasswd_file_name=passwd
-vncpasswd_file_dir=/root/.vnc
-cat > /etc/X11/xorg.conf.d/vnc.conf << EOF
-Section "Module"
-        Load "vnc"
-EndSection
+  vncpasswd_file_name=passwd
+  vncpasswd_file_dir=/root/.vnc
+  cat > /etc/X11/xorg.conf.d/vnc.conf << EOF
+  Section "Module"
+    Load "vnc"
+  EndSection
 
-Section "Screen"
-        Identifier "VNC Extension"
-        Option "SecurityTypes" "VncAuth"
-        Option "UserPasswdVerifier" "VncAuth"
-        Option "PasswordFile" "$vncpasswd_file_dir/$vncpasswd_file_name"
-EndSection
+  Section "Screen"
+    Identifier "VNC Extension"
+    Option "SecurityTypes" "VncAuth"
+    Option "UserPasswdVerifier" "VncAuth"
+    Option "PasswordFile" "$vncpasswd_file_dir/$vncpasswd_file_name"
+  EndSection
 EOF
-if [[ ! -e $vncpasswd_file_dir -a ! -d $vncpasswd_file_dir ]]; then
-  mkdir $vncpasswd_file_dir   
-  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
-else
-  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
-fi
+  if [[ ! -e $vncpasswd_file_dir -a ! -d $vncpasswd_file_dir ]]; then
+    mkdir $vncpasswd_file_dir   
+    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
+  else
+    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
+  fi
 }
 
 if [[ -z $1 ]]; then
