@@ -148,12 +148,10 @@ enable_vnc(){
     Option "PasswordFile" "$vncpasswd_file_dir/$vncpasswd_file_name"
   EndSection
 EOF
-  if [[ ! -e $vncpasswd_file_dir -a ! -d $vncpasswd_file_dir ]]; then
+  if [[ ! -e $vncpasswd_file_dir/$vncpasswd_file_name ]]; then
     mkdir $vncpasswd_file_dir   
-    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
-  else
-    cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
   fi
+  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
 }
 
 if [[ -z $1 ]]; then
