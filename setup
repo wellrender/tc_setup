@@ -2,7 +2,7 @@
 set -x
 SELF=$(basename $0)
 UPDATE_BASE=http://192.32.1.111:8000
-KLMOVER=/opt/kaspersky/klnagent/bin/klmover
+KLMOVER_PATH=/opt/kaspersky/klnagent/bin/klmover
 
 run_self_update() {
   echo "Performing self-update..."
@@ -86,7 +86,7 @@ rename_host(){
   fi
 }
 
-change_klagent_hostid(KLMOVER_PATH){
+change_klagent_hostid(){
   if [[ -x $KLMOVER_PATH ]]; then 
     if ask "REGENERATE HOSTID FOR KLNAGENT?"; then
       $KLMOVER_PATH -dupfix
@@ -165,7 +165,7 @@ if [[ -z $1 ]]; then
       1)
       rename_host;;
       2)
-      change_klagent_hostid $KLMOVER;;
+      change_klagent_hostid;;
       3)
       install_cryptopro;;
       4)
