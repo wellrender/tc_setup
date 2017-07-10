@@ -3,6 +3,7 @@ set -x
 SELF=$(basename $0)
 UPDATE_BASE=http://192.32.1.111:8000
 KLMOVER_PATH=/opt/kaspersky/klnagent/bin/klmover
+HOSTNAMEFILE=/etc/sysconfig/network
 
 run_self_update() {
   echo "Performing self-update..."
@@ -68,21 +69,22 @@ show_menu() {
   echo "3) Install CryptoPRO"
   echo "4) Install/reinstall licence for CryptoPRO"
   echo "5) Install keys"
+  echo "6) Configure firefox"
   echo "0) Exit"
   echo
   echo -n ">>> "
 }
 
 rename_host(){
-  hostnamefile=/etc/sysconfig/network
-  if ask "RENAME HOST?"; then
-    if [ -f $hostnamefile ] ; then
+  if [ -f $HOSTNAMEFILE ] ; then
+    if ask "RENAME HOST?"; then
       echo -n "Input new hostname: "
       read newhostname
-      sed -e "s/^HOSTNAME=.*/HOSTNAME=$newhostname/" -i $hostnamefile
-    else
-      echo "Hostname file $hostnamefile not exist"
+      sed -e "s/^HOSTNAME=.*/HOSTNAME=$newhostname/" -i $HOSTNAMEFILE
     fi
+  else
+    echo "Hostname file $HOSTNAMEFILE not exist"
+    sleep 3
   fi
 }
 
@@ -91,7 +93,10 @@ change_klagent_hostid(){
     if ask "REGENERATE HOSTID FOR KLNAGENT?"; then
       $KLMOVER_PATH -dupfix
     fi
-  else echo "Please install $KLMOVER_PATH"
+  else 
+    echo "Please install $KLMOVER_PATH"
+    sleep 3
+  fi
 }
 
 install_cryptopro(){
@@ -102,6 +107,7 @@ install_cryptopro(){
   apt-get install *.rpm
 }
 
+B
 install_cryptopro_license(){
   echo -n "Enter CryptoPro licence key in UPPER CASE with dashes (-) XXXX-XXXX-XXXX-XXXX: "
 }
@@ -134,7 +140,8 @@ configure_firefox(){
     grep -q $1 user.js || echo "user_pref(\"$1\",$2);" >> user.js
   }
   cd /home/user/.mozilla/firefox/*.default
-  set_option browser.search.defaulturl '"https://duckduckgo.com/"'
+#slashes need to be escaped
+  set_option browser.search.defaulturl '"http:\/\/yandex.ru"'
 }
 
 enable_vnc(){
@@ -152,6 +159,7 @@ enable_vnc(){
     Option "PasswordFile" "$vncpasswd_file_dir/$vncpasswd_file_name"
   EndSection
 EOF
+  B
   if [[ ! -e $vncpasswd_file_dir/$vncpasswd_file_name ]]; then
     mkdir $vncpasswd_file_dir   
   fi
@@ -159,8 +167,7 @@ EOF
 }
 
 if [[ -z $1 ]]; then
-  while read -n 1 answ; do
-    show_menu
+  while show_menu; read -n 1 answ; do
     case $answ in
       1)
       rename_host;;
@@ -173,7 +180,7 @@ if [[ -z $1 ]]; then
       5)
       install_keys;;
       6)
-      configure_firefox;;
+      configure_firefox;sleep 5;;
       7)
       enable_vnc;;
       0)
