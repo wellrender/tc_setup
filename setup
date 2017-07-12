@@ -105,15 +105,16 @@ install_cryptopro(){
   smbclient //server/000 -N -c 'prompt;recurse;cd Иванов\Distrib\sign_cont;mget "packets"'
   cd packets
   apt-get install *.rpm
+  su - user -c '/opt/cprocsp/sbin/ia32/cpconfig -ini "\local\Software\Crypto Pro\CAdESplugin" -add multistring "TrustedSites" "http://192.168.101.102"'
 }
 
-B
 install_cryptopro_license(){
   echo -n "Enter CryptoPro licence key in UPPER CASE with dashes (-) XXXX-XXXX-XXXX-XXXX: "
 }
 
 install_keys(){
   hdimage_dir=/var/opt/cprocsp/keys/user
+  smb_service_name=//server/000
   cd /home/user
   curl -O http://sarmiac.medportal.saratov.gov.ru/media/uploads/admin/2016/01/19/guzmiac-ca.cer
   /opt/cprocsp/bin/ia32/certmgr -inst -file guzmiac-ca.cer -store uRoot
@@ -124,7 +125,7 @@ install_keys(){
   echo -n "Enter container directory names: "
   read container_dir_names
   for container_dir in $container_dir_names; do
-      smbclient //server/000 -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
+      smbclient $smb_service_name -N -c "prompt;recurse;cd Иванов\Distrib\sign_cont;mget $container_dir"
   done
   /bin/chown -R user:user $hdimage_dir  
   su - user <<'EOF'
@@ -135,13 +136,16 @@ EOF
 }
 
 configure_firefox(){
+  user_profile_path=/home/user/.mozilla/firefox
+  user_profile_name=$(basename $user_profile_path/*.default)
   set_option(){
-    sed -i 's/user_pref("'$1'",.*);/user_pref("'$1'",'$2');/' user.js
-    grep -q $1 user.js || echo "user_pref(\"$1\",$2);" >> user.js
+    sed -i 's/user_pref("'$1'",.*);/user_pref("'$1'",'$2');/' $user_profile_path/$user_profile_name/user.js
+    grep -q $1 $user_profile_path/$user_profile_name/user.js || echo "user_pref(\"$1\",$2);" >> $user_profile_path/$user_profile_name/user.js
   }
-  cd /home/user/.mozilla/firefox/*.default
 #slashes need to be escaped
-  set_option browser.search.defaulturl '"http:\/\/yandex.ru"'
+  set_option browser.search.defaultenginename '"Яндекс"'
+  set_option browser.startup.homepage '"http:\/\/192.168.101.102\/mis\/\?use_cryptopro=true"'
+  set_option plugin.state.libnpcades '2'
 }
 
 enable_vnc(){
@@ -159,34 +163,42 @@ enable_vnc(){
     Option "PasswordFile" "$vncpasswd_file_dir/$vncpasswd_file_name"
   EndSection
 EOF
-  B
   if [[ ! -e $vncpasswd_file_dir/$vncpasswd_file_name ]]; then
     mkdir $vncpasswd_file_dir   
   fi
-  cat 12345678 > vncpasswd -f | tee $vncpasswd_file_dir/$vncpasswd_file_name  
+  echo 12345678 | vncpasswd -f > $vncpasswd_file_dir/$vncpasswd_file_name  
 }
 
 if [[ -z $1 ]]; then
   while show_menu; read -n 1 answ; do
     case $answ in
       1)
-      rename_host;;
+      rename_host
+      sleep 5;;
       2)
-      change_klagent_hostid;;
+      change_klagent_hostid
+      sleep 5;;
       3)
-      install_cryptopro;;
+      install_cryptopro
+      sleep 5;;
       4)
-      install_cryptopro_license;;
+      install_cryptopro_license
+      sleep 5;;
       5)
-      install_keys;;
+      install_keys
+      sleep 5;;
       6)
-      configure_firefox;sleep 5;;
+      configure_firefox
+      sleep 5;;
       7)
-      enable_vnc;;
+      enable_vnc
+      sleep 5;;
       0)
       exit 0;;
+      q)
+      exit 0;;
       *)
-      echo "Wrong number";;
+      echo "Wrong menu number";;
     esac
   done
 else
